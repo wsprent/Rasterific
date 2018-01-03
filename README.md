@@ -1,3 +1,29 @@
+PFP Project
+==========
+
+Notes
+----------
+
+[Reference Issue](https://github.com/Twinside/Rasterific/issues/32). Some notes:
+
+ *  The `combineEdgeSamples` function is pointed out as a easily parallelizable function (the `sub` function is basically a parallel map).
+    [Link](https://github.com/Twinside/Rasterific/blob/87c4c39a7062457c6bea44cf79a981ccdf432dbf/src/Graphics/Rasterific/Rasterize.hs#L31).
+    
+    As a reference, for the snowflake benchmark the function is called 8500 times with a mean vector length of 1076.98. 
+ *  The "C Implementation" referenced as parallel can be found in [this](https://github.com/damelang/gezira) repo. It is a machine written
+    C implementation using the runtime of some data streaming programming language ([Nile](https://github.com/damelang/nile)). Inspecting
+    that runtime is necessary to see where the parallelism happens.
+ *  The most recent commit in the Rasterific repo defines a Snowflake benchmark -- very convienient.
+
+TODO List
+----------
+
+In no particular order:
+
+ *  Consider writing some more benchmarks ala the Snowflake example.
+ *  Try slamming some parallelism into `combineEdgeSamples`.
+ *  Try to identify what parallelism could be optained wrt. primitives (see the issue).
+
 Rasterific
 ==========
 
