@@ -6,6 +6,7 @@ module Graphics.Rasterific.Rasterize
     , clip
     ) where
 
+{-import Debug.Trace-}
 import Control.Monad.ST( runST )
 import Data.Fixed( mod' )
 import Data.Monoid( Endo( Endo, appEndo ) )
