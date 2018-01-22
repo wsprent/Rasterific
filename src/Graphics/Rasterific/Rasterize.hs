@@ -8,6 +8,10 @@ module Graphics.Rasterific.Rasterize
     , rasterize
     , toOpaqueCoverage
     , clip
+    , xyCompare
+    , parQuickSort
+    , parSort
+    , sortEdgeSamples
     ) where
 
 import GHC.IO
@@ -112,21 +116,27 @@ parST m = x `par` return x
     x = runST (unsafeIOToST noDuplicate >> unsafeCoerce m)
 
 -- parSort :: (PrimMonad m, MV.MVector v e) => VS.Comparison e -> v (PrimState m) e -> ST (m ())
-parSort :: (MV.MVector v e, Ord e) => v s e -> ST s ()
-parSort a 
-  | n < 2 = return ()
-  | n < 2^12 = VS.sort a
-  | otherwise = do
-      p <- MV.unsafeRead a (n `div` 2)
-      m <- MV.unstablePartition (<p) a -- partitionBy cmp a p 0 n
-      --MV.unsafeSwap a 0 (m-1)
-      let a1 = MV.unsafeSlice 0 m a
-      let a2 = MV.unsafeSlice (max m 1) (n-(max m 1)) a
-      v <- parST $ parSort a1
-      parSort a2
-      v `seq` return ()
+parSort :: (Show e, MV.MVector v e, Ord e) => v s e -> ST s ()
+parSort a = go a $ ceiling $ log fl
   where
-    n = MV.length a
+    fl = fromIntegral $ MV.length a
+    go a d
+      | n < 2 = return ()
+--      | d < 1 || n < 1000 = VS.sort a -- Don't bother sparking for smaller Vs
+      | otherwise = do
+          MV.unsafeSwap a 0 mid -- Pivot index > 0
+          p <- MV.unsafeRead a 0 -- Get pivot
+          let rest = MV.unsafeSlice 1 (n-1) a -- Keep pivot in place
+          m' <- MV.unstablePartition (<p) rest -- Partition rest of array
+          MV.unsafeSwap a 0 m' -- Swap pivot back into place m' is the first index of the second partition of rest but the last of a
+          let a1 = MV.unsafeSlice 0 m' a -- {abcd}p   first slice cannot be empty; second can
+          let a2 = MV.unsafeSlice (min (m'+1) n) (n-(min (m'+1) n)) a -- abcdp{efgh}
+          v <- parST $ go a1 (d-1)
+          v2 <- parST $ go a2 (d-1)
+          v `seq` v2 `seq` return ()
+            where
+              n = MV.length a
+              mid = n `div` 2
               
 instance Eq EdgeSample where
   x == y = case xyCompare x y of
@@ -154,6 +164,7 @@ sortEdgeSamples samples = runST $ do
   -- it is actually a pessimisation.
   mutableVector <- V.unsafeThaw $ V.fromList samples
   parSort mutableVector
+  -- VS.sortBy xyCompare mutableVector
   V.unsafeFreeze mutableVector
   --V.fromList $ parQuickSort samples
   
