@@ -146,6 +146,9 @@ module Graphics.Rasterific
 
 import Data.Monoid( (<>) )
 
+import Debug.Trace
+import Control.Monad.Par.Scheds.Sparks ( runPar )
+import Control.Monad.Par ( parMap )
 import Control.Monad.Free( Free( .. ), liftF )
 import Control.Monad.Free.Church( fromF )
 import Control.Monad.ST( ST, runST )
@@ -457,9 +460,10 @@ renderDrawingAtDpi
     -> Drawing px () -- ^ Rendering action
     -> Image px
 renderDrawingAtDpi width height dpi background drawing =
-    runST $ runDrawContext width height background
-          $ mapM_ fillOrder
-          $ drawOrdersOfDrawing width height dpi background drawing
+    let m = drawOrdersOfDrawing width height dpi background drawing
+        k = traceMarker "runpar" $ runPar $ parMap (fillOrder1 width height) m
+    in runST $ runDrawContext width height background $ mapM_ fillOrder2 $ zip m k
+   -- in runST $ runDrawContext width height background $ mapM_ fillOrder m
 
 cacheOrders :: forall px. (RenderablePixel px)
             => Maybe (Image px -> ImageTransformer px) -> [DrawOrder px] -> Drawing px ()

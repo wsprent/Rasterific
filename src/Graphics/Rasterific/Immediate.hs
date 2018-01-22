@@ -25,6 +25,7 @@ module Graphics.Rasterific.Immediate
     , fillWithTexture
     , fillWithTextureNoAA
     , fillOrder
+    , fillOrder1, fillOrder2
 
     , textToDrawOrders
     , transformOrder
@@ -32,7 +33,9 @@ module Graphics.Rasterific.Immediate
     , meshToImage
     ) where
 
-
+import Debug.Trace
+import Control.Monad.Par.Scheds.Sparks ( runPar )
+import Control.Monad.Par ( parMap )
 import Control.Monad.ST( ST, runST )
 import Data.Maybe( fromMaybe )
 import qualified Data.Foldable as F
@@ -107,10 +110,26 @@ orderToDrawing order =
       filler prims =
           liftF $ Fill (_orderFillMethod order) prims ()
 
+fillOrder1 :: (Integral x, RenderablePixel px)
+           => x -> x -> DrawOrder px -> [[CoverageSpan]]
+fillOrder1 width height o@DrawOrder { _orderMask = Nothing } =
+  runPar $ parMap (fillWithTexture1 (_orderFillMethod o) width height) (_orderPrimitives o)
+fillOrder1 _ _ _ = error "not implemented"
+
+fillOrder2 :: (PrimMonad m, RenderablePixel px)
+           => (DrawOrder px, [[CoverageSpan]]) -> DrawContext m px ()
+fillOrder2 (o, spans) = do
+  F.forM_ spans $ fillWithTexture2 (_orderTexture o)
+  img <- traceMarker "after eval" get
+  lift $ primToPrim $ flip evalStateT img $ _orderDirect o
+
 -- | Render the drawing orders on the canvas.
 fillOrder :: (PrimMonad m, RenderablePixel px)
           => DrawOrder px -> DrawContext m px ()
-fillOrder o@DrawOrder { _orderMask = Nothing } = do
+--fillOrder o@DrawOrder { _orderMask = Nothing } = do
+--  (MutableImage width height _) <- get
+--  fillyc (o, filly width height o)
+fillOrder o@DrawOrder { _orderMask = Nothing } = traceMarker "fillOrder" $ do
   F.forM_ (_orderPrimitives o) $
     fillWithTexture (_orderFillMethod o) (_orderTexture o)
   img <- get
@@ -163,6 +182,25 @@ isCoverageDrawable img coverage =
 --
 -- <<docimages/immediate_fill.png>>
 --
+fillWithTexture1 :: Integral x
+                 => FillMethod
+                 -> x -> x
+                 -> [Primitive] -- ^ Primitives to fill
+                 -> [CoverageSpan]
+fillWithTexture1 fillMethod width height els =
+    let !mini = V2 0 0
+        !maxi = V2 (fromIntegral width) (fromIntegral height)
+        clipped = foldMap (clip mini maxi) els
+        spans = rasterize fillMethod clipped
+    in spans
+
+fillWithTexture2 :: (PrimMonad m, RenderablePixel px)
+                 => Texture px -> [CoverageSpan] -> DrawContext m px ()
+fillWithTexture2 texture spans = do
+    img <- get
+    let !filler = primToPrim . transformTextureToFiller meshToImage texture img in
+      lift . mapExec filler $ filter (isCoverageDrawable img) spans
+
 fillWithTexture :: (PrimMonad m, RenderablePixel px)
                 => FillMethod
                 -> Texture px  -- ^ Color/Texture used for the filling
