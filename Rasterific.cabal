@@ -96,6 +96,7 @@ library
                , containers  >= 0.5
                , transformers
                , monad-par
+               , parallel
                , deepseq
 
   if !flag(embed_linear)
