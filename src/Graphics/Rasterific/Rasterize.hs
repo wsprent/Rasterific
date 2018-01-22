@@ -7,6 +7,7 @@ module Graphics.Rasterific.Rasterize
     ) where
 
 {-import Debug.Trace-}
+import Control.DeepSeq
 import Control.Monad.ST( runST )
 import Data.Fixed( mod' )
 import Data.Monoid( Endo( Endo, appEndo ) )
@@ -24,6 +25,8 @@ data CoverageSpan = CoverageSpan
     , _coverageLength :: {-# UNPACK #-} !Float
     }
     deriving Show
+
+instance NFData CoverageSpan where rnf !_ = ()
 
 toOpaqueCoverage :: CoverageSpan -> CoverageSpan
 {-# INLINE toOpaqueCoverage #-}

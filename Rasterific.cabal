@@ -95,6 +95,8 @@ library
                , bytestring  >= 0.10.2
                , containers  >= 0.5
                , transformers
+               , monad-par
+               , deepseq
 
   if !flag(embed_linear)
       build-depends: linear >= 1.3
@@ -120,8 +122,6 @@ Executable coon_render
                  , transformers
                  , criterion
 
-  
-  
 Executable doc_builder
     default-language:    Haskell2010
     Main-Is: docImageGenerator.hs
@@ -144,7 +144,7 @@ Executable snowflake
     default-language:    Haskell2010
     default-language:    Haskell2010
     Main-Is: snowflake.hs
-    ghc-options: -Wall -O2
+    ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -eventlog
     ghc-prof-options: -rtsopts -Wall -prof -auto-all
     Hs-Source-Dirs: exec-src
     other-modules: Arbitrary
@@ -168,9 +168,8 @@ Executable snowflake
 
 Executable lines
     default-language:    Haskell2010
-    default-language:    Haskell2010
     Main-Is: lines.hs
-    ghc-options: -Wall -O2
+    ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -eventlog
     ghc-prof-options: -rtsopts -Wall -prof -auto-all
     Hs-Source-Dirs: exec-src
     other-modules: Arbitrary
@@ -192,12 +191,11 @@ Executable lines
                  , random
                  --, groom
 
-
 Executable bigsquare
     default-language:    Haskell2010
     default-language:    Haskell2010
     Main-Is: bigsquare.hs
-    ghc-options: -Wall -O2 -eventlog
+    ghc-options: -Wall -O2 -threaded -rtsopts -with-rtsopts=-N -eventlog
     ghc-prof-options: -rtsopts -Wall -prof -auto-all
     Hs-Source-Dirs: exec-src
     other-modules: Arbitrary
