@@ -461,7 +461,7 @@ renderDrawingAtDpi
     -> Image px
 renderDrawingAtDpi width height dpi background drawing =
     let m = drawOrdersOfDrawing width height dpi background drawing
-        k = traceMarker "runpar" $ runPar $ parMap (fillOrder1 width height) m
+        k = runPar $ parMap (fillOrder1 width height) m
     in runST $ runDrawContext width height background $ mapM_ fillOrder2 $ zip m k
    -- in runST $ runDrawContext width height background $ mapM_ fillOrder m
 

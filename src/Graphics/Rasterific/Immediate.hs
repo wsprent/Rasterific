@@ -120,7 +120,7 @@ fillOrder2 :: (PrimMonad m, RenderablePixel px)
            => (DrawOrder px, [[CoverageSpan]]) -> DrawContext m px ()
 fillOrder2 (o, spans) = do
   F.forM_ spans $ fillWithTexture2 (_orderTexture o)
-  img <- traceMarker "after eval" get
+  img <- get
   lift $ primToPrim $ flip evalStateT img $ _orderDirect o
 
 -- | Render the drawing orders on the canvas.
@@ -129,7 +129,7 @@ fillOrder :: (PrimMonad m, RenderablePixel px)
 --fillOrder o@DrawOrder { _orderMask = Nothing } = do
 --  (MutableImage width height _) <- get
 --  fillyc (o, filly width height o)
-fillOrder o@DrawOrder { _orderMask = Nothing } = traceMarker "fillOrder" $ do
+fillOrder o@DrawOrder { _orderMask = Nothing } = do
   F.forM_ (_orderPrimitives o) $
     fillWithTexture (_orderFillMethod o) (_orderTexture o)
   img <- get
