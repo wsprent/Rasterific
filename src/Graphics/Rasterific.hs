@@ -144,6 +144,7 @@ module Graphics.Rasterific
     , dumpDrawing
     ) where
 
+import Debug.Trace
 import Data.Monoid( (<>) )
 
 import Control.Monad.Free( Free( .. ), liftF )
@@ -457,9 +458,10 @@ renderDrawingAtDpi
     -> Drawing px () -- ^ Rendering action
     -> Image px
 renderDrawingAtDpi width height dpi background drawing =
-    runST $ runDrawContext width height background
-          $ mapM_ fillOrder
-          $ drawOrdersOfDrawing width height dpi background drawing
+    let k = drawOrdersOfDrawing width height dpi background drawing in
+      trace ("draworders: " ++ show (length k)) $
+        runST $ runDrawContext width height background
+            $ mapM_ fillOrder k
 
 cacheOrders :: forall px. (RenderablePixel px)
             => Maybe (Image px -> ImageTransformer px) -> [DrawOrder px] -> Drawing px ()

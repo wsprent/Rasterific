@@ -27,8 +27,8 @@ renderSquare n =
            fill $ snowflake
 
 main :: IO ()
-main = defaultMain [bench "big square draw" $ whnf renderSquare 10000]
- -- writePng "bigsquare.png" renderSquare
+main = -- defaultMain [bench "big square draw" $ whnf renderSquare 10000]
+  writePng "bigsquare.png" $ renderSquare 10000
 
 snowflake :: [Bezier]
 snowflake =

@@ -242,5 +242,5 @@ main = do
   writePng "flakes.png" $
     renderFlakes width height zoom boxes
   -- benching
-  defaultMain [bench "flake draw" $ whnf (benchFlakes width height zoom) boxes]
+  --defaultMain [bench "flake draw" $ whnf (benchFlakes width height zoom) boxes]
 

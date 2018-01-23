@@ -6,7 +6,7 @@ module Graphics.Rasterific.Rasterize
     , clip
     ) where
 
-{-import Debug.Trace-}
+import Debug.Trace
 import Control.Monad.ST( runST )
 import Data.Fixed( mod' )
 import Data.Monoid( Endo( Endo, appEndo ) )
@@ -32,8 +32,10 @@ toOpaqueCoverage coverage = coverage { _coverageVal = 1 }
 combineEdgeSamples :: (Float -> Float) -> V.Vector EdgeSample
                    -> [CoverageSpan]
 {-# INLINE combineEdgeSamples #-}
-combineEdgeSamples prepareCoverage vec = go 0 0 0 0 0
+combineEdgeSamples prepareCoverage vec =
+  trace ("coveragespans: " ++ show (length res)) $ res
   where
+    res = go 0 0 0 0 0
     !maxi = V.length vec
     go !ix !x !y !a !_h | ix >= maxi = [CoverageSpan x y (prepareCoverage a) 1]
     go !ix !x !y !a !h = sub (vec `V.unsafeIndex` ix) where
@@ -70,7 +72,7 @@ xyCompare !(EdgeSample { _sampleY = ay, _sampleX = ax })
     c -> c
 
 sortEdgeSamples :: [EdgeSample] -> V.Vector EdgeSample
-sortEdgeSamples samples = runST $ do
+sortEdgeSamples samples = trace ("edgesamples: " ++ show (length samples)) $ runST $ do
     -- Resist the urge to make this a storable vector,
     -- it is actually a pessimisation.
     mutableVector <- V.unsafeThaw $ V.fromList samples
@@ -78,16 +80,16 @@ sortEdgeSamples samples = runST $ do
     V.unsafeFreeze mutableVector
 
 rasterize :: FillMethod -> Container Primitive -> [CoverageSpan]
-rasterize method = 
+rasterize method p = trace ("primitives: " ++ show (length p)) $
   case method of
-    FillWinding -> combineEdgeSamples combineWinding 
+    FillWinding -> (combineEdgeSamples combineWinding
                         . sortEdgeSamples
                         . (($ []) . appEndo)
-                        . foldMap (Endo . decompose)
-    FillEvenOdd -> combineEdgeSamples combineEvenOdd
+                        . foldMap (Endo . decompose)) p
+    FillEvenOdd -> (combineEdgeSamples combineEvenOdd
                         . sortEdgeSamples
                         . (($ []) . appEndo)
-                        . foldMap (Endo . decompose)
+                        . foldMap (Endo . decompose)) p
   where combineWinding = min 1 . abs
         combineEvenOdd cov = abs $ abs (cov - 1) `mod'` 2 - 1
 

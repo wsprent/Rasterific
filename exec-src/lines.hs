@@ -57,9 +57,9 @@ main :: IO ()
 main = do
   let width = 800
       height = 600
-  l <- V.fromList <$> replicateM 100000 (randomLine width height)
+  l <- V.fromList <$> replicateM 1000 (randomLine width height)
   writePng "lines.png" $
     renderLines width height l
   -- benching
-  defaultMain [bench "flake draw" $ whnf (benchLines width height) l]
+  --defaultMain [bench "flake draw" $ whnf (benchLines width height) l]
 
